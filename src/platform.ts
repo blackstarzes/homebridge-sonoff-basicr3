@@ -60,8 +60,8 @@ export class SonoffBasicR3HomebridgePlatform implements DynamicPlatformPlugin {
       resolverSequence: [
         mdns.rst.DNSServiceResolve(),
         'DNSServiceGetAddrInfo' in mdns.dns_sd ? mdns.rst.DNSServiceGetAddrInfo() : mdns.rst.getaddrinfo({ families: [0] }),
-        mdns.rst.makeAddressesUnique()
-      ]
+        mdns.rst.makeAddressesUnique(),
+      ],
     });
     this.browser.on('serviceUp', (service) => this.serviceUp(service));
     this.browser.on('serviceDown', (service) => this.serviceDown(service));
