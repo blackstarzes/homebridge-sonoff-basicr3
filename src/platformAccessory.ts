@@ -71,7 +71,7 @@ export class SonoffBasicR3 {
           data: { },
         };
         const resp = await this.client.create<Response<InfoData>>('/zeroconf/info', req);
-        this.platform.log.info(`Fetched ${req.deviceid} state [Sequence: ${resp.result!.seq}]`);
+        this.platform.log.debug(`Fetched ${req.deviceid} state [Sequence: ${resp.result!.seq}]`);
         this.state = resp.result!.data;
       } catch(ex) {
         this.platform.log.error(ex);
