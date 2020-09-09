@@ -1,114 +1,107 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
+import mdns from 'mdns';
+import { RestClient } from 'typed-rest-client/RestClient';
+import { IRequestOptions } from 'typed-rest-client/Interfaces';
 
-import { ExampleHomebridgePlatform } from './platform';
+import { SonoffBasicR3HomebridgePlatform } from './platform';
+import { PLUGIN_NAME } from './settings';
+import { OnOff, InfoData, SwitchData, Request, Response } from './sonoff';
 
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class ExamplePlatformAccessory {
+export class SonoffBasicR3 {
   private service: Service;
-
-  /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
-   */
-  private exampleStates = {
-    On: false,
-    Brightness: 100,
-  }
+  private id: string;
+  private hostAndPort: string;
+  private client: RestClient;
+  private state: InfoData;
 
   constructor(
-    private readonly platform: ExampleHomebridgePlatform,
+    private readonly platform: SonoffBasicR3HomebridgePlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly mdnsService: mdns.Service,
   ) {
+    // set private properties
+    this.id = mdnsService.txtRecord.id;
+    this.hostAndPort = `${mdnsService.addresses[0]}:${mdnsService.port}`;
+    const options: IRequestOptions = {
+      headers: [
+        'Content-Type: application/json',
+      ],
+    };
+    this.client = new RestClient(PLUGIN_NAME, `http://${this.hostAndPort}`, undefined, options);
+    this.state = {
+      switch: OnOff.Off,
+      startup: OnOff.Off,
+      pulse: OnOff.Off,
+      pulseWidth: 0,
+      ssid: '',
+      otaUnlock: false,
+      fwVersion: '',
+      deviceid: '',
+      bssid: '',
+      signalStrength: 0,
+    };
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Default-Model')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'Default-Serial');
-
-    // get the LightBulb service if it exists, otherwise create a new LightBulb service
-    // you can create multiple services for each accessory
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Sonoff')
+      .setCharacteristic(this.platform.Characteristic.Model, 'BasicR3')
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.id);
     this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
-
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.exampleDisplayName);
-
-    // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Lightbulb
+    this.service.setCharacteristic(this.platform.Characteristic.Name, mdnsService.name!);
 
     // register handlers for the On/Off Characteristic
     this.service.getCharacteristic(this.platform.Characteristic.On)
-      .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
-      .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
+      .on('set', this.setOn.bind(this))  // SET - bind to the `setOn` method below
+      .on('get', this.getOn.bind(this)); // GET - bind to the `getOn` method below
 
-    // register handlers for the Brightness Characteristic
-    this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-      .on('set', this.setBrightness.bind(this));       // SET - bind to the 'setBrightness` method below
-
-
-    /**
-     * Creating multiple services of the same type.
-     * 
-     * To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
-     * when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
-     * this.accessory.getService('NAME') || this.accessory.addService(this.platform.Service.Lightbulb, 'NAME', 'USER_DEFINED_SUBTYPE_ID');
-     * 
-     * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
-     * can use the same sub type id.)
-     */
-
-    // Example: add two "motion sensor" services to the accessory
-    const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
-
-    const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
-
-    /**
-     * Updating characteristics values asynchronously.
-     * 
-     * Example showing how to update the state of a Characteristic asynchronously instead
-     * of using the `on('get')` handlers.
-     * Here we change update the motion sensor trigger states on and off every 10 seconds
-     * the `updateCharacteristic` method.
-     * 
-     */
-    let motionDetected = false;
-    setInterval(() => {
-      // EXAMPLE - inverse the trigger
-      motionDetected = !motionDetected;
-
-      // push the new value to HomeKit
-      motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
-      motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
-
-      this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
-      this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
-    }, 10000);
+    // poll for state
+    let refreshRate = 15000;
+    if (this.platform.config.refreshRate) {
+      refreshRate = this.platform.config.refreshRate * 1000;
+    }
+    setInterval(async () => {
+      try {
+        const req: Request<unknown> = {
+          deviceid: this.id,
+          data: { },
+        };
+        const resp = await this.client.create<Response<InfoData>>('/zeroconf/info', req);
+        this.platform.log.info(`Fetched ${req.deviceid} state [Sequence: ${resp.result!.seq}]`);
+        this.state = resp.result!.data;
+      } catch(ex) {
+        this.platform.log.error(ex);
+      }
+    }, refreshRate);
   }
 
   /**
-   * Handle "SET" requests from HomeKit
+   * Handle 'SET' requests from HomeKit
    * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
    */
-  setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-
-    // implement your own code to turn your device on/off
-    this.exampleStates.On = value as boolean;
-
-    this.platform.log.debug('Set Characteristic On ->', value);
-
-    // you must call the callback function
-    callback(null);
+  async setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+    const req: Request<SwitchData> = {
+      deviceid: this.id,
+      data: {
+        switch: value as boolean ? OnOff.On : OnOff.Off,
+      },
+    };
+    try {
+      const resp = await this.client.create<Response<unknown>>('/zeroconf/switch', req);
+      this.platform.log.info(`Turned ${req.deviceid} ${req.data.switch} [Sequence: ${resp.result!.seq}]`);
+      callback(null);
+    } catch (ex) {
+      this.platform.log.error(ex);
+      callback(ex);
+    }
   }
 
   /**
-   * Handle the "GET" requests from HomeKit
+   * Handle the 'GET' requests from HomeKit
    * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
    * 
    * GET requests should return as fast as possbile. A long delay here will result in
@@ -120,32 +113,7 @@ export class ExamplePlatformAccessory {
    * @example
    * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
    */
-  getOn(callback: CharacteristicGetCallback) {
-
-    // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
-
-    this.platform.log.debug('Get Characteristic On ->', isOn);
-
-    // you must call the callback function
-    // the first argument should be null if there were no errors
-    // the second argument should be the value to return
-    callback(null, isOn);
+  async getOn(callback: CharacteristicGetCallback) {
+    callback(null, this.state.switch === OnOff.On);
   }
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, changing the Brightness
-   */
-  setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-
-    // implement your own code to set the brightness
-    this.exampleStates.Brightness = value as number;
-
-    this.platform.log.debug('Set Characteristic Brightness -> ', value);
-
-    // you must call the callback function
-    callback(null);
-  }
-
 }

@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install avahi daemon (mDNS)
+        run: sudo apt-get install libavahi-compat-libdnssd-dev
+
+      - name: Use Node.js 13.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 13.x
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Publish the package
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
