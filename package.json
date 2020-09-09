@@ -1,7 +1,7 @@
 {
   "displayName": "Sonoff BasicR3",
   "name": "@blackstarzes/homebridge-sonoff-basicr3",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Homebridge plugin for the Sonoff BasicR3 DIY switch.",
   "license": "Apache-2.0",
   "repository": {

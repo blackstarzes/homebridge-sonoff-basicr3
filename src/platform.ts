@@ -56,7 +56,13 @@ export class SonoffBasicR3HomebridgePlatform implements DynamicPlatformPlugin {
   discoverDevices() {
     // Listen for mDNS services
     this.log.debug('Setting up mDNS browser...');
-    this.browser = mdns.createBrowser(mdns.tcp('ewelink'));
+    this.browser = mdns.createBrowser(mdns.tcp('ewelink'), {
+      resolverSequence: [
+        mdns.rst.DNSServiceResolve(),
+        'DNSServiceGetAddrInfo' in mdns.dns_sd ? mdns.rst.DNSServiceGetAddrInfo() : mdns.rst.getaddrinfo({ families: [0] }),
+        mdns.rst.makeAddressesUnique()
+      ]
+    });
     this.browser.on('serviceUp', (service) => this.serviceUp(service));
     this.browser.on('serviceDown', (service) => this.serviceDown(service));
     this.browser.start();

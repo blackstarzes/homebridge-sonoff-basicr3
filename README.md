@@ -35,6 +35,30 @@
 
 1.  Add the Homebridge accessory to HomeKit
 
+#### Bootstrap
+
+Once ssh-ed into the Pi:
+
+```shell
+# Update
+sudo apt-get update -y
+sudo apt-get upgrade -y
+sudo apt dist-upgrade -y
+
+# Install Node.js
+curl -sL https://deb.nodesource.com/setup_12.x | sudo bash -
+sudo apt-get install -y nodejs gcc g++ make python
+node -v
+sudo npm install -g npm
+
+# Install Homebridge
+sudo npm install -g --unsafe-perm homebridge homebridge-config-ui-x
+sudo hb-service install --user homebridge
+
+# Install mDNS
+sudo apt-get install libavahi-compat-libdnssd-dev -y
+```
+
 ### Prepare your hardware for DIY mode
 
 1.  Download the eWeLink app on [iOS][eWeLink iOS] or [Android][eWeLink Android], connect and and upgrade to the latest firmware
