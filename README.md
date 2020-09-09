@@ -1,150 +1,83 @@
+# Sonoff BasicR3
 
-<p align="center">
+## Usage
 
-<img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150">
+### Installation
 
-</p>
+1.  [Install][GitHub Homebridge] Homebridge on your hub
 
+    > For example, Raspberry Pi:
+    >
+    > 1.  [Install][Raspberry Pi OS] Raspberry Pi OS
+    >     
+    >     * Setup [headless][Raspberry Pi Headless] (ssh, network)
+    >     * `ssh` into the Pi and change password, hostname using `sudo raspi-config`
+    >
+    > 1.  [Install][Homebridge Raspbian] Homebridge
 
-# Homebridge Platform Plugin Template
+1.  Install the `@blackstarzes/homebridge-sonoff-basicr3` plugin in Homebridge
 
-This is a template Homebridge platform plugin and can be used as a base to help you get started developing your own plugin.
+1.  Add the Sonoff BasicR3 platform to the [configuration][Homebrige Configuration]:
 
-This template should be use in conjunction with the [developer documentation](https://developers.homebridge.io/). A full list of all supported service types, and their characteristics is available on this site.
+    ```json
+    {
+      "bridge": {
+        "name": "Homebridge"
+      },
+      "accessories": [],
+      "platforms": [
+        {
+          "platform": "SonoffBasicR3"
+        }
+      ]
+    }
+    ```
 
-## Clone As Template
+1.  Add the Homebridge accessory to HomeKit
 
-Click the link below to create a new GitHub Repository using this template, or click the *Use This Template* button above.
+### Prepare your hardware for DIY mode
 
-<span align="center">
+1.  Download the eWeLink app on [iOS][eWeLink iOS] or [Android][eWeLink Android], connect and and upgrade to the latest firmware
 
-### [Create New Repository From Template](https://github.com/homebridge/homebridge-plugin-template/generate)
+    > This can be quite tricky the first time.
+    >
+    > 1.  Without the DIY jumper installed, power on the device. The blue LED should flash `..-`.
+    > 1.  Press and hold the button until the blue LED flashes `.` continuously.
+    > 1.  Open the eWeLink app and add the device (requires adding it to your network - only 2.4GHz).
+    > 1.  Go into the device settings and upgrade to the latest firmware.
 
-</span>
+1.  Supply mains power to the Sonoff BasicR3's input - the device should power up.
 
-## Setup Development Environment
+1.  Press and hold the button until the blue LED flashes `..-`.
 
-To develop Homebridge plugins you must have Node.js 12 or later installed, and a modern code editor such as [VS Code](https://code.visualstudio.com/). This plugin template uses [TypeScript](https://www.typescriptlang.org/) to make development easier and comes with pre-configured settings for [VS Code](https://code.visualstudio.com/) and ESLint. If you are using VS Code install these extensions:
+1.  Press and hold the button until the blue LED flashes `.` continuously.
 
-* [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+1.  Connect to the `ITEAD-XXX` access point (password is `12345678`) and navigate to http://10.10.7.1 and configure this with your SSID and password.
 
-## Install Development Dependencies
+## Development
 
-Using a terminal, navigate to the project folder and run this command to install the development dependencies:
+### Install homebridge
 
-```
-npm install
-```
+1.  Follow the instructions at the [GitHub Homebridge] repository
 
-## Update package.json
+    ```shell
+    sudo npm install -g --unsafe-perm homebridge
+    ```
 
-Open the [`package.json`](./package.json) and change the following attributes:
+1.  In the root directory of this repository, run:
 
-* `name` - this should be prefixed with `homebridge-` or `@username/homebridge-` and contain no spaces or special characters apart from a dashes
-* `displayName` - this is the "nice" name displayed in the Homebridge UI
-* `repository.url` - Link to your GitHub repo
-* `bugs.url` - Link to your GitHub repo issues page
+    ```shell
+    npm run watch
+    ```
 
-When you are ready to publish the plugin you should set `private` to false, or remove the attribute entirely.
+1.  Add the hub to your home (preferably in a development home), and develop away
 
-## Update Plugin Defaults
+1.  Pull requests are welcome!
 
-Open the [`src/settings.ts`](./src/settings.ts) file and change the default values:
-
-* `PLATFORM_NAME` - Set this to be the name of your platform. This is the name of the platform that users will use to register the plugin in the Homebridge `config.json`.
-* `PLUGIN_NAME` - Set this to be the same name you set in the [`package.json`](./package.json) file. 
-
-Open the [`config.schema.json`](./config.schema.json) file and change the following attribute:
-
-* `pluginAlias` - set this to match the `PLATFORM_NAME` you defined in the previous step.
-
-## Build Plugin
-
-TypeScript needs to be compiled into JavaScript before it can run. The following command will compile the contents of your [`src`](./src) directory and put the resulting code into the `dist` folder.
-
-```
-npm run build
-```
-
-## Link To Homebridge
-
-Run this command so your global install of Homebridge can discover the plugin in your development environment:
-
-```
-npm link
-```
-
-You can now start Homebridge, use the `-D` flag so you can see debug log messages in your plugin:
-
-```
-homebridge -D
-```
-
-## Watch For Changes and Build Automatically
-
-If you want to have your code compile automatically as you make changes, and restart Homebridge automatically between changes you can run:
-
-```
-npm run watch
-```
-
-This will launch an instance of Homebridge in debug mode which will restart every time you make a change to the source code. It will load the config stored in the default location under `~/.homebridge`. You may need to stop other running instances of Homebridge while using this command to prevent conflicts. You can adjust the Homebridge startup command in the [`nodemon.json`](./nodemon.json) file.
-
-## Customise Plugin
-
-You can now start customising the plugin template to suit your requirements.
-
-* [`src/platform.ts`](./src/platform.ts) - this is where your device setup and discovery should go.
-* [`src/platformAccessory.ts`](./src/platformAccessory.ts) - this is where your accessory control logic should go, you can rename or create multiple instances of this file for each accessory type you need to implement as part of your platform plugin. You can refer to the [developer documentation](https://developers.homebridge.io/) to see what characteristics you need to implement for each service type.
-* [`config.schema.json`](./config.schema.json) - update the config schema to match the config you expect from the user. See the [Plugin Config Schema Documentation](https://developers.homebridge.io/#/config-schema).
-
-## Versioning Your Plugin
-
-Given a version number `MAJOR`.`MINOR`.`PATCH`, such as `1.4.3`, increment the:
-
-1. **MAJOR** version when you make breaking changes to your plugin,
-2. **MINOR** version when you add functionality in a backwards compatible manner, and
-3. **PATCH** version when you make backwards compatible bug fixes.
-
-You can use the `npm version` command to help you with this:
-
-```bash
-# major update / breaking changes
-npm version major
-
-# minor update / new features
-npm version update
-
-# patch / bugfixes
-npm version patch
-```
-
-## Publish Package
-
-When you are ready to publish your plugin to [npm](https://www.npmjs.com/), make sure you have removed the `private` attribute from the [`package.json`](./package.json) file then run:
-
-```
-npm publish
-```
-
-If you are publishing a scoped plugin, i.e. `@username/homebridge-xxx` you will need to add `--access=public` to command the first time you publish.
-
-#### Publishing Beta Versions
-
-You can publish *beta* versions of your plugin for other users to test before you release it to everyone.
-
-```bash
-# create a new pre-release version (eg. 2.1.0-beta.1)
-npm version prepatch --preid beta
-
-# publsh to @beta
-npm publish --tag=beta
-```
-
-Users can then install the  *beta* version by appending `@beta` to the install command, for example:
-
-```
-sudo npm install -g homebridge-example-plugin@beta
-```
-
-
+[GitHub Homebridge]: https://github.com/homebridge/homebridge
+[Raspberry Pi OS]: https://www.raspberrypi.org/downloads/raspberry-pi-os/
+[Raspberry Pi Headless]: https://www.raspberrypi.org/documentation/configuration/wireless/headless.md
+[Homebridge Raspbian]: https://github.com/homebridge/homebridge/wiki/Install-Homebridge-on-Raspbian
+[Homebrige Configuration]: https://github.com/homebridge/homebridge/wiki/Homebridge-Config-JSON-Explained
+[eWeLink iOS]: https://itunes.apple.com/us/app/ewelink-smart-home-control/id1035163158?mt=8
+[eWeLink Android]: https://play.google.com/store/apps/details?id=com.coolkit&hl=en

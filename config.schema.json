@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "SonoffBasicR3",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,7 +9,13 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Sonoff BasicR3 Platform"
+      },
+      "refreshRate": {
+        "title": "Refresh Rate",
+        "description": "The interval in seconds between accessory state polls",
+        "type": "integer",
+        "default": 15
       }
     }
   }
