@@ -70,6 +70,7 @@ export class SonoffBasicR3HomebridgePlatform implements DynamicPlatformPlugin {
 
   serviceUp(service: mdns.Service) {
     this.log.info(`mDNS service up: ${service.name} (id ${service.txtRecord.id}) at ${service.addresses[0]}:${service.port}`);
+    this.log.debug(JSON.stringify(service));
     const uuid = this.api.hap.uuid.generate(service.txtRecord.id);
     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
     if (existingAccessory) {
@@ -88,5 +89,6 @@ export class SonoffBasicR3HomebridgePlatform implements DynamicPlatformPlugin {
 
   serviceDown(service: mdns.Service) {
     this.log.info(`mDNS service down: ${service.name} (id ${service.txtRecord.id}) at ${service.addresses[0]}:${service.port}`);
+    this.log.debug(JSON.stringify(service));
   }
 }
