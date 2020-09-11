@@ -68,6 +68,8 @@ sudo apt-get install libavahi-compat-libdnssd-dev -y
     > 1.  Without the DIY jumper installed, power on the device. The blue LED should flash `..-`.
     > 1.  Press and hold the button until the blue LED flashes `.` continuously.
     > 1.  Open the eWeLink app and add the device (requires adding it to your network - only 2.4GHz).
+    >     * For firmware >=3.5, use quick pairing mode
+    >     * For firmware <3.5, use compatibility mode
     > 1.  Go into the device settings and upgrade to the latest firmware.
 
 1.  Supply mains power to the Sonoff BasicR3's input - the device should power up.
